@@ -1,13 +1,17 @@
 package ca.ualberta.ridr;
 
+import android.*;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -57,6 +61,7 @@ public class GeoView extends FragmentActivity implements OnMapReadyCallback, Con
     private RiderController riders;
     private boolean firstLoad;
     private boolean test;
+    private final int MY_PERMISSION_ACCESS_FINE_LOCATION = 3;
     private Context context = this;
 
     @Override
@@ -165,7 +170,14 @@ public class GeoView extends FragmentActivity implements OnMapReadyCallback, Con
         map = googleMap;
 
         // Allow the user to go home at any time
-        map.setMyLocationEnabled(true);
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_FINE_LOCATION  },
+                    MY_PERMISSION_ACCESS_FINE_LOCATION );
+        } else {
+            //we have permission
+            map.setMyLocationEnabled(true);
+        }
+
 
         map.setOnMapLongClickListener(searchAtPoint);
         // What time is it?
@@ -184,6 +196,31 @@ public class GeoView extends FragmentActivity implements OnMapReadyCallback, Con
         map.setOnInfoWindowClickListener(goToRequest);
         map.setInfoWindowAdapter(displayRequest);
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSION_ACCESS_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // location-related task you need to do.
+                    map.setMyLocationEnabled(true);
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 
 
