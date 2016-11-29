@@ -1,10 +1,13 @@
 package ca.ualberta.ridr;
 
+import android.*;
+import android.Manifest;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -15,6 +18,8 @@ import android.os.Bundle;
 
 import android.support.annotation.Nullable;
 
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.util.Log;
 import android.view.MenuInflater;
@@ -56,6 +61,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 import android.location.Location;
 
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+
 /**
  * This view allows for a rider to create a new request. Allows Rider to also see his requests and
  * rides from the menu option. Implements google maps methods, as well as ACallback.
@@ -92,6 +99,7 @@ public class RiderMainView extends FragmentActivity implements ACallback, OnMapR
     private Marker startMarker;
     private Marker endMarker;
     private Geocoder geocoder;
+    private final int MY_PERMISSION_ACCESS_FINE_LOCATION = 3;
 
     private Context context = this;
     private LatLng pickupCoord;
@@ -305,8 +313,43 @@ public class RiderMainView extends FragmentActivity implements ACallback, OnMapR
     public void onMapReady(GoogleMap googleMap){
         gMap = googleMap;
         // Allow the user to go home at any time
-        gMap.setMyLocationEnabled(true);
+
+        if ( ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_FINE_LOCATION  },
+                    MY_PERMISSION_ACCESS_FINE_LOCATION );
+        } else {
+            //we have permission
+            gMap.setMyLocationEnabled(true);
+        }
+
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSION_ACCESS_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // location-related task you need to do.
+                    gMap.setMyLocationEnabled(true);
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+
 
     public void update(){}
 
@@ -458,6 +501,7 @@ public class RiderMainView extends FragmentActivity implements ACallback, OnMapR
      */
     // Simple function to grab current location in LatLong
     private LatLng getCurrentLocation(){
+
         Location currentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if(currentLocation != null) {
             return new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
